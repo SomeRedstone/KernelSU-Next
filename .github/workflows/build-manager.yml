@@ -69,3 +69,5 @@ jobs:
           echo ""
           echo "Debug APK:"
           ls -lh manager/app/build/outputs/apk/debug/*.apk 2>/dev/null || echo "No debug APK found"
+
+# reindex trigger
