@@ -83,27 +83,16 @@ fun getUpstreamDescribe(): Triple<Int, String, Int> {
 }
 
 // Version code calc.
+// Pinned to match official v3.4.1 manager (KernelSU_Next_v3.4.1_33333-release.apk).
+// CI checkout has no tags/history, so computed count would be wrong (30001/v0.0.0).
 fun getVersionCode(): Int {
-    val (commitCount, _, _) = getUpstreamDescribe()
-    val major = 1
-    return major * 30000 + commitCount
+    return 33333
 }
 
 // Version name (upstream tag, describe number, hash)
+// Pinned — see above.
 fun getVersionName(): String {
-    val (commitCount, hash, num) = getUpstreamDescribe()
-    val branch = getCurrentBranch()
-
-    var baseCommit = runCommand("git", "merge-base", "HEAD", "refs/remotes/origin/$branch")
-    if (baseCommit.contains("fatal") || baseCommit.isEmpty()) {
-        baseCommit = runCommand("git", "merge-base", "HEAD", "refs/remotes/origin/main")
-    }
-    if (baseCommit.contains("fatal") || baseCommit.isEmpty()) {
-        baseCommit = "HEAD"
-    }
-
-    val tag = runCommand("git", "describe", "--tags", "--abbrev=0", baseCommit).let { if (it.isEmpty() || it.contains("fatal")) "v0.0.0" else it }
-    return "$tag-$num-g$hash"
+    return "v3.4.1"
 }
 
 // Root project version info. assignment (extras)
