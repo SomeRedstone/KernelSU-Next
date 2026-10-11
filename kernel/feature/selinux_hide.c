@@ -36,6 +36,16 @@ static DEFINE_MUTEX(selinux_hide_mutex);
 bool ksu_selinux_hide_enabled __read_mostly = false;
 bool ksu_selinux_hide_running __read_mostly = false;
 
+// Hook pointers used unconditionally (SUSFS or not); declared once at file
+// scope so the unguarded use sites in ksu_selinux_hide_enable(),
+// type_attribute_bounds_av() and security_compute_av_user_with_policy()
+// always see them. Tetris is 6.1 + SUSFS, which skips both guarded copies below.
+static void (*security_dump_masked_av_fn)(struct policydb *policydb, struct context *scontext, struct context *tcontext,
+                                          u16 tclass, u32 permissions, const char *reason) = NULL;
+static void (*context_struct_compute_av_fn)(struct policydb *policydb, struct context *scontext,
+                                            struct context *tcontext, u16 tclass, struct av_decision *avd,
+                                            struct extended_perms *xperms) = NULL;
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 static int security_context_to_sid_with_policy(struct selinux_policy *policy, const char *scontext, u32 scontext_len,
                                                u32 *sid, u32 def_sid, gfp_t gfp_flags);
@@ -43,11 +53,6 @@ static int security_sid_to_context_with_policy(struct selinux_policy *policy, u3
                                                u32 *scontext_len);
 static void security_compute_av_user_with_policy(struct selinux_policy *policy, u32 ssid, u32 tsid, u16 tclass,
                                                  struct av_decision *avd);
-static void (*security_dump_masked_av_fn)(struct policydb *policydb, struct context *scontext, struct context *tcontext,
-                                          u16 tclass, u32 permissions, const char *reason) = NULL;
-static void (*context_struct_compute_av_fn)(struct policydb *policydb, struct context *scontext,
-                                            struct context *tcontext, u16 tclass, struct av_decision *avd,
-                                            struct extended_perms *xperms) = NULL;
 #else
 struct selinux_state fake_state = {0};
 #endif
@@ -87,11 +92,6 @@ static int security_sid_to_context_with_policy(struct selinux_policy *policy, u3
                                                u32 *scontext_len);
 static void security_compute_av_user_with_policy(struct selinux_policy *policy, u32 ssid, u32 tsid, u16 tclass,
                                                  struct av_decision *avd);
-static void (*security_dump_masked_av_fn)(struct policydb *policydb, struct context *scontext, struct context *tcontext,
-                                          u16 tclass, u32 permissions, const char *reason) = NULL;
-static void (*context_struct_compute_av_fn)(struct policydb *policydb, struct context *scontext,
-                                            struct context *tcontext, u16 tclass, struct av_decision *avd,
-                                            struct extended_perms *xperms) = NULL;
 
 static write_op_fn *context_write, *access_write;
 static write_op_fn orig_context_write, orig_access_write;
